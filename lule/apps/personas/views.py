@@ -9,7 +9,8 @@ PUBLIC = 'PUB'
 class PhotoQueryset(object):
 
     def get_photos_queryset(self, request):
-        if not request.user.is_authenticated():
+
+        if not request.user.is_authenticated:
             photos = Photo.objects.filter(visibility=PUBLIC)
         elif request.user.is_superuser:
             photos = Photo.objects.all()

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.viewsets import ModelViewSet
 
 # Models
 from apps.personas.models import Photo
@@ -12,13 +13,6 @@ from apps.personas.api.pictures.serializers import PhotoSerializer, PhotoListSer
 
 # Queriset
 from apps.personas.views import PhotoQueryset
-
-"""class PhotoListAPI(APIView):
-
-    def get(self, request):
-        photos = Photo.objects.all()
-        serializer = PhotoSerializer(photos, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)"""
 
 
 class PhotoListAPI(PhotoQueryset, ListCreateAPIView):
@@ -32,6 +26,10 @@ class PhotoListAPI(PhotoQueryset, ListCreateAPIView):
     def get_queryset(self):
         return self.get_photos_queryset(self.request) # Dependiendo que tipo de usuario sera las fotos que le regrese
 
+    # TODO: este metodo se ejecuta cuando la peticion es post y le estoy diciando que al guardar el owner siempre sea el usuario autenticado no importando que le manden
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class PhotoDetailAPI(PhotoQueryset, RetrieveUpdateDestroyAPIView):
 
@@ -41,3 +39,27 @@ class PhotoDetailAPI(PhotoQueryset, RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return self.get_photos_queryset(self.request) # Dependiendo que tipo de usuario sera las fotos que le regrese
+
+
+# Todo: ViewSets proporciona los sigientes metodos: list #GET (listado), create #POST, retrieve #GET(Detalle), update #PUT, partial_update #PATCH, destroy #DELETE
+"""
+:Esta clase basada en viewsets hace lo mismo que las dos de arriba
+"""
+
+
+class PhotoViewSet(PhotoQueryset, ModelViewSet):
+
+    queryset = Photo.objects.all()
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+
+    def get_queryset(self):
+        return self.get_photos_queryset(self.request)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PhotoListSerializer
+        else:
+            return PhotoSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
